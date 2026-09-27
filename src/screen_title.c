@@ -37,6 +37,7 @@ static int finishScreen = 0;
 static Texture2D title_texture = {0};
 static float alpha;
 static bool fadein = true;
+static const int anim_frames = 60;
 
 //----------------------------------------------------------------------------------
 // Title Screen Functions Definition
@@ -50,7 +51,7 @@ void InitTitleScreen(void)
     finishScreen = 0;
     title_texture = LoadTexture("./resources/Keys_title.png");
     fadein = true;
-    alpha = 0.05f;
+    alpha = 0.3f;
 }
 
 // Title Screen Update logic
@@ -58,19 +59,15 @@ void UpdateTitleScreen(void)
 {
     framesCounter++;
     
-    if (alpha > 0.95f) {
-        fadein = false;
+    if (framesCounter > anim_frames) {
         framesCounter = 0;
-    } else if (alpha < 0.05f) {
-        fadein = true;
-        framesCounter = 0;
+        fadein = !fadein;
     }
-
     if (fadein) {
-        alpha = Remap(framesCounter%50, 0, 50, 0.05, 1.0);
+        alpha = Remap(framesCounter, 0, anim_frames, 0.3, 1.0);
         printf("FADEIN - Alpha: %f\n", alpha);
     } else {
-        alpha = Remap(framesCounter%50, 0, 50, 0.95, 0.0);
+        alpha = Remap(framesCounter, 0, anim_frames, 1.0, 0.3);
         printf("FADEOUT - Alpha: %f\n", alpha);
     }
 
@@ -98,7 +95,7 @@ void DrawTitleScreen(void)
     // // Start text 
     Vector2 bb_text_start = MeasureTextEx(font, "PRESS ENTER to START GAME", font.baseSize, 2);
     Vector2 pos_start = {(int)(GetScreenWidth()/2)-(bb_text_start.x/2), (int)(GetScreenHeight()/2)-(bb_text_start.y/2)};
-    DrawTextEx(font, "PRESS ENTER to START GAME", pos_start, font.baseSize, 4, Fade(VN_ORANGE, alpha));
+    DrawTextEx(font, "PRESS ENTER to START GAME", pos_start, font.baseSize, 2, Fade(VN_ORANGE, alpha));
 }
 
 // Title Screen Unload logic

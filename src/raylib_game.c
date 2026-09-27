@@ -82,14 +82,14 @@ int main(void)
 {
     // Initialization
     //---------------------------------------------------------
-    InitWindow(screenWidth, screenHeight, "raylib game template");
+    InitWindow(screenWidth, screenHeight, "KEYS (by ranny & guillata)");
 
     InitAudioDevice();      // Initialize audio device
     srand(time(NULL));      // Initialize random seed 
 
     // Load global data (assets that must be available in all screens, i.e. font)
-    font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 30, NULL, 0);
-    big_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 100, NULL, 0);
+    font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 35, NULL, 0);
+    big_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 180, NULL, 0);
     small_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 20, NULL, 0);
     //music = LoadMusicStream("resources/ambient.ogg"); // TODO: Load music
     fxKeys = LoadSound("./resources/keys.mp3");
