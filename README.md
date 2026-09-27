@@ -1,6 +1,6 @@
 ## KEYS
 
-![$(Game Title)](screenshots/crossing.png "$(Game Title)")
+![$(Game Title)](screenshots/title.png "$(Game Title)")
 
 ### Introducción
 
