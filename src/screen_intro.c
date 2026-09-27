@@ -54,9 +54,9 @@ void InitIntroScreen(void)
     dialogue_state = 0;
     panel_pos = (Vector2){80,350};
     panel_width = 0;
-    dialogues[0] = "Friday 6pm. El mejor momento de la semana ha llegado.\nTienes muchas ganas de ir a casa";
-    dialogues[1] = "Apagas el ordenador y recoges tus cosas.\nTe despides de los colegas que quedan en la oficina";
-    dialogues[2] = "Sales de la oficina pensando en los planes del\nfin de semana.";
+    dialogues[0] = "Friday, 6p.m. The best moment of the week is finally here\nYou're more than ready to go home. ";
+    dialogues[1] = "You shut down your computer, grab your staff, and say\ngoodbye to the colleagues still hanging around the office. ";
+    dialogues[2] = "You walk out the door already thinking about\nyour weekend plans. ";
     alpha = 0.0f;
 }
 
@@ -124,7 +124,7 @@ void DrawIntroScreen(void)
             for ( int i=0; i<actual_char; i++) {
                 printed_text[i] = dialogues[dialogue_state-1][i];
             }
-            printed_text[actual_char+1] = '\0';
+            printed_text[actual_char] = '\0';
             
                         
             DrawRectangle(panel_pos.x, panel_pos.y, panel_width, 80, Fade(XT_DK_GREY, 0.7f));
@@ -145,7 +145,7 @@ void DrawIntroScreen(void)
 // Gameplay Screen Unload logic
 void UnloadIntroScreen(void)
 {
-    // TODO: Unload INTRO screen variables here!
+    UnloadTexture(bg_texture);
 }
 
 // Gameplay Screen should finish?

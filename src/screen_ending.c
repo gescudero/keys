@@ -23,6 +23,7 @@
 *
 **********************************************************************************************/
 
+#include "colors.h"
 #include "raylib.h"
 #include "screens.h"
 
@@ -61,11 +62,11 @@ void UpdateEndingScreen(void)
 void DrawEndingScreen(void)
 {
     // TODO: Draw ENDING screen here!
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLUE);
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), XT_DK_GREY);
 
-    Vector2 pos = { 20, 10 };
-    DrawTextEx(font, "ENDING SCREEN", pos, font.baseSize*3.0f, 4, DARKBLUE);
-    DrawText("PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
+    Vector2 pos = { 120, 50 };
+    DrawTextEx(big_font, "TANCAT", pos, big_font.baseSize, 4, VN_ORANGE);
+    DrawTextEx(font, "TE VA A TOCAR ABRAZAR UN BANCO", (Vector2){120, 220}, font.baseSize, 2, VN_ORANGE);
 }
 
 // Ending Screen Unload logic

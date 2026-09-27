@@ -65,10 +65,8 @@ void UpdateTitleScreen(void)
     }
     if (fadein) {
         alpha = Remap(framesCounter, 0, anim_frames, 0.3, 1.0);
-        printf("FADEIN - Alpha: %f\n", alpha);
     } else {
         alpha = Remap(framesCounter, 0, anim_frames, 1.0, 0.3);
-        printf("FADEOUT - Alpha: %f\n", alpha);
     }
 
     // Press enter or tap to change to GAMEPLAY screen
