@@ -13,6 +13,7 @@
 /***
  * Variable Definitions
  */
+static int finishScreen = 0;
 static int grid[NB_ROWS][NB_COLS] = {0};
 static queue_t piezas;
 static Color colores[9] = {VN_BLACK, VN_BLUE, VN_LT_PURPLE, VN_LT_GREEN, VN_GN_YELLOW, VN_ORANGE, VN_PINK, VN_RED, VN_WHITE};
@@ -27,6 +28,8 @@ static float score = 0.0f;
 static int total_passengers = 35;
 static int margintop = 40;
 static int marginleft = 10;
+static float wait_time_elapsed = 0.0f;
+static float wait_time_limit = 5.0f;
 
 /***
  * Functions declarations
@@ -55,14 +58,19 @@ void InitTitrisScreen(void) {
     InitTitrisModels();
     InitTextures();
     FillPiezasList(&piezas);
+    finishScreen = 0;
     game_state = TITRIS_ACTIVE;
     current_piece.active = false;
+    wait_time_elapsed = 0.0f;
 }
 void UpdateTitrisScreen(void) {
     // Update data in the main loop
     time_accum += GetFrameTime();
-    if (game_state == TITRIS_ACTIVE) UpdateLoop();
-
+    if (game_state == TITRIS_ACTIVE) {
+        UpdateLoop();
+    } else {
+        wait_time_elapsed += GetFrameTime();
+    }
 }
 void DrawTitrisScreen(void) {
     // Draw screen 
@@ -99,7 +107,7 @@ void DrawTitrisScreen(void) {
     DrawTextEx(small_font, TextFormat("Passengers Remaining: %i", total_passengers), (Vector2){350, 10}, small_font.baseSize, 1, VN_PINK);
 
     
-    // GAME OVER
+    // GAME OVER (debemos limpiar y volver a iniciar)
     if (game_state == TITRIS_GAME_OVER) {
         char *text = "AUTOBUS LLENO\nTENDRAS QUE ESPERAR\nAL SIGUIENTE";
         Vector2 pos = {50, 100};
@@ -110,13 +118,17 @@ void DrawTitrisScreen(void) {
         // DrawText("TENDRÁS QUE ESPERAR", 50, 150, 40, VN_LT_GREEN);
         // DrawText("AL SIGUIENTE", 50, 200, 40, VN_LT_GREEN);
     }
-    // WIN GAME
+    // WIN GAME (pasamos a la pantalla de WINNING)
     if (game_state == TITRIS_WIN_GAME) {
-        char *text = "HAS CONSEGUIDO\nESPACIO EN EL\nAUTOBUS";
-        Vector2 pos = {50, 100};
-        Vector2 bb_text = MeasureTextEx(font, text, font.baseSize, 2);
-        DrawRectangle(pos.x - 5, pos.y - 5, bb_text.x + 10, bb_text.y + 10, Fade(VN_BLACK, 0.9f));
-        DrawTextEx(font, text, pos, font.baseSize, 2, VN_LT_GREEN);
+        if (wait_time_elapsed < wait_time_limit) {
+            char *text = "HAS CONSEGUIDO\nESPACIO EN EL\nAUTOBUS";
+            Vector2 pos = {50, 100};
+            Vector2 bb_text = MeasureTextEx(font, text, font.baseSize, 2);
+            DrawRectangle(pos.x - 5, pos.y - 5, bb_text.x + 10, bb_text.y + 10, Fade(VN_BLACK, 0.9f));
+            DrawTextEx(font, text, pos, font.baseSize, 2, VN_LT_GREEN);
+        } else {
+            finishScreen = 1;
+        }
     }
 }
 void UnloadTitrisScreen(void) {
@@ -124,7 +136,7 @@ void UnloadTitrisScreen(void) {
     UnloadTextures();
 }
 int FinishTitrisScreen(void) {
-    return 0;
+    return finishScreen;
 }
 
 /***
@@ -170,6 +182,12 @@ static bool PieceCanMoveDown(Vector2 prev_pos, const pieza_t *pieza) {
     const char **forma = pieza->formas[pieza->rot_state];
     for (int col=0; col<4; col++) {
         for (int row=0; row<4; row++) {
+            // si nos salimos de la grid por arriba o por debajo, lo ignoramos
+            // para evitar overflows
+            if (final_col+col >= NB_COLS) {
+                continue;
+            }
+
             // comprobamos si alguno de los '1' se sale por abajo
             if (forma[row][col] != '0' && final_row+row >= NB_ROWS) {
                 return false;
@@ -189,6 +207,12 @@ static bool PieceCanMoveUp(Vector2 prev_pos, const pieza_t *pieza) {
     const char **forma = pieza->formas[pieza->rot_state];
     for (int col=0; col<4; col++) {
         for (int row=0; row<4; row++) {
+            // si nos salimos de la grid por arriba o por debajo, lo ignoramos
+            // para evitar overflows
+            if (final_row+row >= NB_ROWS || final_col+col >= NB_COLS) {
+                continue;
+            }
+
             // comprobamos si alguno de los '1' se sale por arriba
             if (forma[row][col] != '0' && final_row+row < 0) {
                 return false;
@@ -240,14 +264,19 @@ static bool PieceCanRotate(Vector2 pos, pieza_t *pieza) {
                 pieza->rot_state = prev_rotation;
                 return false;
             }
+            if (forma[row][col] != '0' && final_row + row < 0 ) {
+                pieza->rot_state = prev_rotation;
+                return false;
+            }
             if (forma[row][col] != '0' && final_col + col < 0 ) {
                 pieza->rot_state = prev_rotation;
                 return false;
             }
-            if (forma[row][col] != '0' && final_col + col >= NB_COLS ) {
-                pieza->rot_state = prev_rotation;
-                return false;
-            }
+            // Permitimos rotar si nos salimos por la derecha
+            // if (forma[row][col] != '0' && final_col + col >= NB_COLS ) {
+            //     pieza->rot_state = prev_rotation;
+            //     return false;
+            // }
             int cell_value = grid[final_row+row][final_col+col];
             if (forma[row][col] != '0' && cell_value != 0) {
                 pieza->rot_state = prev_rotation;
