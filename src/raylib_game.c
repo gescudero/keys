@@ -12,6 +12,7 @@
 
 #include "colors.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "screens.h"    // NOTE: Declares global (extern) variables and screens functions
 
 #if defined(PLATFORM_WEB)
@@ -75,6 +76,7 @@ static void DrawTransition(void);           // Draw transition effect (full-scre
 static void UpdateDrawFrame(void);          // Update and draw one frame
 static void UpdateGlobalUI(void);
 static void DrawGlobalUI(void);
+static void GetTimeToClose(char **clock);
 //----------------------------------------------------------------------------------
 // Program main entry point
 //----------------------------------------------------------------------------------
@@ -90,7 +92,7 @@ int main(void)
     // Load global data (assets that must be available in all screens, i.e. font)
     font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 35, NULL, 0);
     big_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 180, NULL, 0);
-    small_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 20, NULL, 0);
+    small_font = LoadFontEx("./resources/SauceCodeProNerdFont-SemiBold.ttf", 21, NULL, 0);
     //music = LoadMusicStream("resources/ambient.ogg"); // TODO: Load music
     fxKeys = LoadSound("./resources/keys.mp3");
     fxHorns[0] = LoadSound("./resources/car_horn_01.mp3");
@@ -125,10 +127,13 @@ int main(void)
         case TITLE: UnloadTitleScreen(); break;
         case OPTIONS: UnloadOptionsScreen(); break;
         case INTRO: UnloadIntroScreen(); break;
+        case GOHOME: UnloadGoHomeScreen(); break;
+        case ATHOME: UnloadAtHomeScreen(); break;
         case CROSSGAME: UnloadCrossingScreen(); break;
         case FIGHTGAME: UnloadFightingScreen(); break;
         case TITRIS: UnloadTitrisScreen(); break;
         case ENDING: UnloadEndingScreen(); break;
+        case WINNING: UnloadWinningScreen(); break;
         default: break;
     }
 
@@ -162,10 +167,13 @@ static void ChangeToScreen(int screen)
         case TITLE: UnloadTitleScreen(); break;
         case OPTIONS: UnloadOptionsScreen(); break;
         case INTRO: UnloadIntroScreen(); break;
+        case GOHOME: UnloadGoHomeScreen(); break;
+        case ATHOME: UnloadAtHomeScreen(); break;
         case CROSSGAME: UnloadCrossingScreen(); break;
         case FIGHTGAME: UnloadFightingScreen(); break;
         case TITRIS: UnloadTitrisScreen(); break;
         case ENDING: UnloadEndingScreen(); break;
+        case WINNING: UnloadWinningScreen(); break;
         default: break;
     }
 
@@ -176,10 +184,13 @@ static void ChangeToScreen(int screen)
         case TITLE: InitTitleScreen(); break;
         case OPTIONS: InitOptionsScreen(); break;
         case INTRO: InitIntroScreen(); break;
-        case CROSSGAME: InitCrossingScreen(); break;
-        case FIGHTGAME: InitFightingScreen(); break;
+        case GOHOME: InitGoHomeScreen(); break;
+        case ATHOME: InitAtHomeScreen(); break;
+        case CROSSGAME: InitCrossingScreen(&elapsed_time); break;
+        case FIGHTGAME: InitFightingScreen(&elapsed_time); break;
         case TITRIS: InitTitrisScreen(); break;
         case ENDING: InitEndingScreen(); break;
+        case WINNING: InitWinningScreen(); break;
         default: break;
     }
 
@@ -199,7 +210,6 @@ static void TransitionToScreen(int screen)
 // Update transition effect (fade-in, fade-out)
 static void UpdateTransition(void)
 {
-    LOG("UpdateTransition\n");
     if (!transFadeOut)
     {
         transAlpha += 0.05f;
@@ -217,10 +227,13 @@ static void UpdateTransition(void)
                 case TITLE: UnloadTitleScreen(); break;
                 case OPTIONS: UnloadOptionsScreen(); break;
                 case INTRO: UnloadIntroScreen(); break;
+                case GOHOME: UnloadGoHomeScreen(); break;
+                case ATHOME: UnloadAtHomeScreen(); break;
                 case CROSSGAME: UnloadCrossingScreen(); break;
                 case FIGHTGAME: UnloadFightingScreen(); break;
                 case TITRIS: UnloadTitrisScreen(); break;
                 case ENDING: UnloadEndingScreen(); break;
+                case WINNING: UnloadWinningScreen(); break;
                 default: break;
             }
 
@@ -231,10 +244,13 @@ static void UpdateTransition(void)
                 case TITLE: InitTitleScreen(); break;
                 case OPTIONS: InitOptionsScreen(); break;
                 case INTRO: InitIntroScreen(); break;
-                case CROSSGAME: InitCrossingScreen(); break;
-                case FIGHTGAME: InitFightingScreen(); break;
+                case GOHOME: InitGoHomeScreen(); break;
+                case ATHOME: InitAtHomeScreen(); break;
+                case CROSSGAME: InitCrossingScreen(&elapsed_time); break;
+                case FIGHTGAME: InitFightingScreen(&elapsed_time); break;
                 case TITRIS: InitTitrisScreen(); break;
                 case ENDING: InitEndingScreen(); break;
+                case WINNING: InitWinningScreen(); break;
                 default: break;
             }
 
@@ -246,7 +262,6 @@ static void UpdateTransition(void)
     }
     else  // Transition fade out logic
     {
-        DrawText("FADEOUT", 200, 150, 20, XT_DK_PURPLE);
         transAlpha -= 0.02f;
 
         if (transAlpha < -0.01f)
@@ -303,7 +318,19 @@ static void UpdateDrawFrame(void)
             {
                 UpdateIntroScreen();
 
-                if (FinishIntroScreen() == 1) TransitionToScreen(CROSSGAME);
+                if (FinishIntroScreen() == 1) TransitionToScreen(GOHOME);
+            } break;
+            case GOHOME:
+            {
+                UpdateGoHomeScreen();
+
+                if (FinishGoHomeScreen() == 1) TransitionToScreen(ATHOME);
+            } break;
+            case ATHOME:
+            {
+                UpdateAtHomeScreen();
+
+                if (FinishAtHomeScreen() == 1) TransitionToScreen(CROSSGAME);
             } break;
             case CROSSGAME:
             {
@@ -329,7 +356,7 @@ static void UpdateDrawFrame(void)
                 UpdateGlobalUI();
                 UpdateTitrisScreen();
 
-                if (FinishTitrisScreen() == 1) TransitionToScreen(ENDING);
+                if (FinishTitrisScreen() == 1) TransitionToScreen(WINNING);
             }
             case ENDING:
             {
@@ -338,6 +365,14 @@ static void UpdateDrawFrame(void)
                 if (FinishEndingScreen() == 1) TransitionToScreen(TITLE);
 
             } break;
+            case WINNING:
+            {
+                UpdateWinningScreen();
+
+                if (FinishWinningScreen() == 1) TransitionToScreen(TITLE);
+
+            } break;
+
             default: break;
         }
     }
@@ -356,6 +391,8 @@ static void UpdateDrawFrame(void)
             case TITLE: DrawTitleScreen(); break;
             case OPTIONS: DrawOptionsScreen(); break;
             case INTRO: DrawIntroScreen(); break;
+            case GOHOME: DrawGoHomeScreen(); break;
+            case ATHOME: DrawAtHomeScreen(); break;
             case CROSSGAME:
             {
                 DrawCrossingScreen(); 
@@ -376,6 +413,7 @@ static void UpdateDrawFrame(void)
                 break;
             }
             case ENDING: DrawEndingScreen(); break;
+            case WINNING: DrawWinningScreen(); break;
             default: break;
         }
 
@@ -395,7 +433,18 @@ static void UpdateGlobalUI(void) {
     if (seconds_to_end - (int)elapsed_time <= 0) currentScreen = ENDING;
 }
 static void DrawGlobalUI(void) {
-    Vector2 pos = {50, 10};
-    DrawTextEx(small_font, TextFormat("Time to close office: %i", seconds_to_end - (int)elapsed_time), pos, small_font.baseSize, 2, VN_GN_YELLOW);
+    Vector2 pos = {40, 10};
+    char *time_to_close;
+    GetTimeToClose(&time_to_close);
+    DrawTextEx(small_font, TextFormat("Time to close office: %s", time_to_close), pos, small_font.baseSize, 2, VN_GN_YELLOW);
+    // free(time_to_close);
+}
 
+static void GetTimeToClose(char **clock) {
+    // mapeamos a 30 minutos
+    int raw_seconds = Remap(elapsed_time, seconds_to_end, 0, 0, 60*30);
+    int minutes = raw_seconds / 60;
+    int seconds = raw_seconds % 60;
+
+    asprintf(clock, "%02d:%02d", minutes, seconds);
 }

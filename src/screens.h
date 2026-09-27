@@ -26,10 +26,26 @@
 #ifndef SCREENS_H
 #define SCREENS_H
 
+#include "raylib.h"
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-typedef enum GameScreen { UNKNOWN = -1, LOGO = 0, TITLE, OPTIONS, INTRO, CROSSGAME, FIGHTGAME, TITRIS, GAMEPLAY, ENDING } GameScreen;
+typedef enum GameScreen { 
+    UNKNOWN = -1, 
+    LOGO = 0, 
+    TITLE, 
+    OPTIONS, 
+    INTRO, 
+    GOHOME, 
+    ATHOME, 
+    CROSSGAME, 
+    FIGHTGAME, 
+    TITRIS, 
+    GAMEPLAY, 
+    ENDING, 
+    WINNING 
+} GameScreen;
 
 //----------------------------------------------------------------------------------
 // Global Variables Declaration (shared by several modules)
@@ -77,7 +93,7 @@ int FinishOptionsScreen(void);
 //----------------------------------------------------------------------------------
 // Crossing Screen Functions Declaration
 //----------------------------------------------------------------------------------
-void InitCrossingScreen(void);
+void InitCrossingScreen(float *elapsed);
 void UpdateCrossingScreen(void);
 void DrawCrossingScreen(void);
 void UnloadCrossingScreen(void);
@@ -86,7 +102,7 @@ int FinishCrossingScreen(void);
 //----------------------------------------------------------------------------------
 // Fight Screen Functions Declaration
 // ---------------------------------------------------------------------------------
-void InitFightingScreen(void);
+void InitFightingScreen(float *elapsed);
 void UpdateFightingScreen(void);
 void DrawFightingScreen(void);
 void UnloadFightingScreen(void);
@@ -111,6 +127,24 @@ void UnloadIntroScreen(void);
 int FinishIntroScreen(void);
 
 //----------------------------------------------------------------------------------
+// Go Home Screen Functions Declaration
+//----------------------------------------------------------------------------------
+void InitGoHomeScreen(void);
+void UpdateGoHomeScreen(void);
+void DrawGoHomeScreen(void);
+void UnloadGoHomeScreen(void);
+int FinishGoHomeScreen(void);
+
+//----------------------------------------------------------------------------------
+// Go Home Screen Functions Declaration
+//----------------------------------------------------------------------------------
+void InitAtHomeScreen(void);
+void UpdateAtHomeScreen(void);
+void DrawAtHomeScreen(void);
+void UnloadAtHomeScreen(void);
+int FinishAtHomeScreen(void);
+
+//----------------------------------------------------------------------------------
 // Ending Screen Functions Declaration
 //----------------------------------------------------------------------------------
 void InitEndingScreen(void);
@@ -118,6 +152,15 @@ void UpdateEndingScreen(void);
 void DrawEndingScreen(void);
 void UnloadEndingScreen(void);
 int FinishEndingScreen(void);
+
+//----------------------------------------------------------------------------------
+// Winning Screen Functions Declaration
+//----------------------------------------------------------------------------------
+void InitWinningScreen(void);
+void UpdateWinningScreen(void);
+void DrawWinningScreen(void);
+void UnloadWinningScreen(void);
+int FinishWinningScreen(void);
 
 #ifdef __cplusplus
 }
