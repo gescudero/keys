@@ -25,20 +25,20 @@
 
 #include "colors.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "screens.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
 
-#define NB_OBSTACLES 30
+#define NB_OBSTACLES 50
 #define NB_LANES 6
 #define NB_OBS_TYPE 7
-
-static int framesCounter = 0;
-static int finishScreen = 0;
 
 typedef struct Player {
     Vector2 position;
@@ -64,10 +64,16 @@ typedef struct Obstacle {
     Color color;
 } Obstacle;
 
-Player player;
-Obstacle obstacles[NB_OBSTACLES];
-Vector2 player_start_pos = {0};
-float time_since_horn = 0.0f;
+static int framesCounter = 0;
+static int finishScreen = 0;
+static float *elapsed_time = NULL;
+static Player player;
+static Obstacle obstacles[NB_OBSTACLES];
+static Vector2 player_start_pos = {0};
+static float time_since_horn = 0.0f;
+static float time_to_start = 5.0f;
+static bool player_can_move = false;
+static int stage = 0;
 
 //----------------------------------------------------------------------------------
 // Crossing Screen Functions Definition
@@ -79,11 +85,15 @@ static void DrawObstacles();
 static void FixCollisionObstacles();
 
 // Crossing Screen Initialization logic
-void InitCrossingScreen(void)
+void InitCrossingScreen(float *elapsed)
 {
+    elapsed_time = elapsed;
     framesCounter = 0;
     finishScreen = 0;
     player_start_pos = (Vector2){((float)GetScreenWidth()/2)+16, 400};
+    player_can_move = false;
+    time_to_start = 5.0f;
+    stage = 0;
     
     player.position = player_start_pos;
     player.velocity = (Vector2){0, 0};
@@ -144,37 +154,45 @@ void InitCrossingScreen(void)
 // Crossing Screen Update logic
 void UpdateCrossingScreen(void)
 {
-    // TODO: Update GAMEPLAY screen variables here!
     framesCounter++;
-
+    time_to_start -= GetFrameTime();
+    if (time_to_start < 0) {
+        player_can_move = true;
+    }
     // Press enter or tap to change to ENDING screen
     if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
     {
         finishScreen = 1;
         PlaySound(fxKeys);
     }
-    // Check collision with player
-    if (IsKeyPressed(KEY_UP))
+    // Player Inputs
+    if (IsKeyPressed(KEY_UP) && player_can_move)
     {
         player.row++;
         if (player.row > NB_LANES -1) {
-            player.row = NB_LANES - 1;
-            finishScreen = 1;
+            if (stage > 2) {
+                finishScreen = 1;
+                player.row = NB_LANES - 1;
+            } else {
+                stage++;
+                player.row = 0;
+            }
         } 
     }
-    if (IsKeyPressed(KEY_DOWN))
+    if (IsKeyPressed(KEY_DOWN) && player_can_move)
     {
         player.row--;
         if (player.row < 0) player.row = 0;
     }
-    if (IsKeyPressed(KEY_LEFT))
+    if (IsKeyPressed(KEY_LEFT) && player_can_move)
     {
-        player.position.x -= 25;
+        player.position.x -= 10;
     }
-    if (IsKeyPressed(KEY_RIGHT))
+    if (IsKeyPressed(KEY_RIGHT) && player_can_move)
     {
-        player.position.x += 25;
+        player.position.x += 10;
     }
+    // UpdatePlayer movement
     UpdatePlayer(&player);
 
     //Obstacles 
@@ -185,7 +203,7 @@ void UpdateCrossingScreen(void)
             UpdateObstacle(&obstacles[i]);
         }
 
-        if (!obstacles[i].active && (framesCounter % 25 == 0)) 
+        if (!obstacles[i].active && (framesCounter % 20 == 0)) 
         {
             obstacles[i].active = true;
             UpdateObstacle(&obstacles[i]);
@@ -198,6 +216,7 @@ void UpdateCrossingScreen(void)
             player.row = 0;
             player.lives--;
             player.last_rebirth = framesCounter;
+            *elapsed_time += 5.0;
 
             if (player.lives < 0)
             {
@@ -212,7 +231,23 @@ void UpdateCrossingScreen(void)
 void DrawCrossingScreen(void)
 {
     // Background color
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), VN_GREEN);
+    Color bgcolor = {0};
+    switch (stage) {
+        case 0:
+            bgcolor = VN_GREEN;
+            break;
+        case 1:
+            bgcolor = VN_ORANGE;
+            break;
+        case 2:
+            bgcolor = VN_RED;
+            break;
+        default:
+            bgcolor = VN_PURPLE;
+            break;
+    
+    }
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), bgcolor);
     // lanes 
     for ( int i=1; i<5; i++ ) 
     {
@@ -223,6 +258,27 @@ void DrawCrossingScreen(void)
     DrawPlayer(&player);
     // obstacles 
     DrawObstacles();
+    // timeout to start 
+    if (!player_can_move) {
+        int sec_to_start = (int)time_to_start;
+        char *title_text;
+        
+        Vector2 pos = {((float)GetScreenWidth()/2)-70, ((float)GetScreenHeight()/2)-35};
+        DrawRectangle(pos.x-5, pos.y-5, 140, 70, Fade(VN_BLACK, 0.7f));
+        
+        if (sec_to_start > 0) {
+            title_text = strdup(TextFormat("%i", (int)time_to_start));
+            pos.x += 55;
+            pos.y += 10;
+        } else {
+            title_text = strdup("START");
+            pos.x += 20;
+            pos.y += 10;
+        }
+        DrawTextEx(font, title_text, pos, font.baseSize, 2, RAYWHITE);
+        free(title_text);
+    }
+
 
 }
 
@@ -252,23 +308,20 @@ static void UpdatePlayer(Player *player)
 }
 static void DrawPlayer(Player *player)
 {
-    float alpha = framesCounter - player->last_rebirth;
-    if (alpha > 100)
-    {
-        alpha = 100.0f;
-    }
-    alpha = alpha/100.0f;
-    // DrawRectangleRec(player->rectangle, Fade(VN_BK_WHITE, alpha));
-    DrawTextureV(player->texture, player->position, RAYWHITE);
+    float alpha = Remap(time_to_start, 5.0f, 0.0f, 0.0f, 1.0f);
+    DrawTextureV(player->texture, player->position, Fade(RAYWHITE, alpha));
 }
 static void UpdateObstacle(Obstacle *obstacle)
 {
+    // subimos la velocidad de cada obstaculo un 20% por stage
+    float speed = obstacle->speed + (stage*(obstacle->speed/20.0));
+
     switch (obstacle->row) {
         case 0:
-        case 1:
+        case 2:
             if (obstacle->position.x > -132 )
             {
-                obstacle->position.x -= obstacle->speed * GetFrameTime();
+                obstacle->position.x -= speed * GetFrameTime();
             } 
             else 
             {
@@ -277,11 +330,11 @@ static void UpdateObstacle(Obstacle *obstacle)
             }
 
             break;
-        case 2:
+        case 1:
         case 3:
             if (obstacle->position.x < GetScreenWidth() + obstacle->rectangle.width )
             {
-                obstacle->position.x += obstacle->speed * GetFrameTime();
+                obstacle->position.x += speed * GetFrameTime();
             } 
             else 
             {
@@ -301,7 +354,7 @@ static void DrawObstacles()
     {
         if (obstacles[i].active)
         {
-            if (obstacles[i].row < 2) {
+            if (obstacles[i].row % 2 == 0) {
                 DrawTextureV(obstacles[i].texture, obstacles[i].position, RAYWHITE);
             } else {
                 Vector2 pos = obstacles[i].position;
@@ -343,11 +396,10 @@ static void FixCollisionObstacles()
         }
     }
     time_since_horn += GetFrameTime();
-    if (caravana && time_since_horn > 2.0f) {
+    if (caravana && time_since_horn > 1.0f) {
         time_since_horn = 0.0f;
         PlaySound(fxHorns[rand()%3]);
     }
-
 }
 
 
